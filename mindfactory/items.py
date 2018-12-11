@@ -8,7 +8,23 @@
 import scrapy
 
 
+class ReviewItem(scrapy.Item):
+    stars = scrapy.Field()
+    text = scrapy.Field()
+    author = scrapy.Field()
+    date = scrapy.Field()
+    verified = scrapy.Field()
+
+
 class MindfactoryItem(scrapy.Item):
     # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    url = scrapy.Field()
+    name = scrapy.Field()
+    brand = scrapy.Field()
+    ean = scrapy.Field()
+    sku = scrapy.Field()
+    count_sold = scrapy.Field()
+    people_watching = scrapy.Field()
+    rma_quote = scrapy.Field()
+    price = scrapy.Field()
+    reviews = ReviewItem()
