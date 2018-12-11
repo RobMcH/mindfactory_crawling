@@ -9,20 +9,20 @@
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'mindfactory'
+BOT_NAME = 'mindfactory_bot'
 
 SPIDER_MODULES = ['mindfactory.spiders']
 NEWSPIDER_MODULE = 'mindfactory.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'mindfactory (+http://www.yourdomain.com)'
+USER_AGENT = 'mindfactory_bot (+http://ims.uni-stuttgart.de)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -64,9 +64,10 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'mindfactory.pipelines.MindfactoryPipeline': 300,
-#}
+ITEM_PIPELINES = {
+    'mindfactory.pipelines.duplicates_pipeline': 1,
+    'mindfactory.pipelines.database_pipeline': 2
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html

@@ -38,9 +38,9 @@ class ProductSpider(scrapy.Spider):
             yield scrapy.Request(url, callback=self.parse_category)
 
     def parse_category(self, response):
-        for href in response.xpath(self.next_page_xpath):
-            url = href.extract()
-            yield scrapy.Request(url, callback=self.parse_category)
+        # Extract URL to the next page.
+        yield scrapy.Request(response.xpath(self.next_page_xpath.extract()[0], callback=self.parse_category()))
+        # Extract URLs to all products on each page.
         for href in response.xpath(self.product_xpath):
             url = href.extract()
             yield scrapy.Request(url, callback=self.parse_product)
@@ -57,6 +57,7 @@ class ProductSpider(scrapy.Spider):
         item["people_watching"] = count_and_people[1]
         item["rma_quote"] = response.xpath(self.product_rma_xpath).extract()[:-1]
         item["reviews"] = self.parse_reviews(response)
+        yield item
 
     def parse_reviews(self, response):
         reviews = []
