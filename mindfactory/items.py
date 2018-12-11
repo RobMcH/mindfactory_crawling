@@ -25,4 +25,4 @@ class MindfactoryItem(scrapy.Item):
     people_watching = scrapy.Field()
     rma_quote = scrapy.Field()
     price = scrapy.Field()
-    reviews = ReviewItem()
+    reviews = scrapy.Field()
