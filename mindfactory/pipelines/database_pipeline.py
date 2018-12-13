@@ -1,27 +1,27 @@
-import pymongo
+import sqlite3
+from scrapy import log
 
 
 class DatabasePipeline(object):
-    collection_name = "mindfactory_items"
 
-    def __init__(self, mongo_uri, mongo_db):
-        self.mongo_uri = mongo_uri
-        self.mongo_db = mongo_db
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        return cls(
-            mongo_uri=crawler.settings.get('MONGO_URI'),
-            mongo_db=crawler.settings.get('MONGO_DATABASE', 'items')
-        )
-
-    def open_spider(self, spider):
-        self.client = pymongo.MongoClient(self.mongo_uri)
-        self.db = self.client[self.mongo_db]
+    def __init__(self):
+        self.connection = sqlite3.connect('./scrapedata.db')
+        self.cursor = self.connection.cursor()
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS myscrapedata (id INTEGER PRIMARY KEY, url TEXT,'
+                            ' name TEXT, brand TEXT, ean INTEGER, sku TEXT, count_sold INTEGER,'
+                            ' people_watching INTEGER, rma_quote INTEGER, price REAL, reviews BLOB)')
 
     def close_spider(self, spider):
-        self.client.close()
+        self.cursor.close()
+        self.connection.close()
 
     def process_item(self, item, spider):
-        self.db[self.collection_name].insert_one(dict(item))
+        self.cursor.executemany('INSERT INTO myscrapedata VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', item["url"],
+                                item["name"], item["brand"], item["ean"], item["sku"], item["count_sold"],
+                                item["people_watching"], item["rma_quote"], item["price"], item["reviews"])
+        self.connection.commit()
+        log.msg("Item stored : " % item, level=log.DEBUG)
         return item
+
+    def handle_error(self, e):
+        log.err(e)

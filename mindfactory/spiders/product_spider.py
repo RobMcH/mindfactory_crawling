@@ -1,6 +1,9 @@
 import scrapy
-import scrapy.shell
+from scrapy.http import Request, Response
+from scrapy.utils.datatypes import SequenceExclude
 from mindfactory.items import MindfactoryItem, ReviewItem
+from twisted.internet import reactor, threads
+from w3lib.url import any_to_uri
 
 
 class ProductSpider(scrapy.Spider):
@@ -33,6 +36,7 @@ class ProductSpider(scrapy.Spider):
         self.review_date_xpath = 'div[1]/div/div[2]/span/text()'
         self.review_verified_xpath = 'div[1]/div/div[3]/strong/span'
         self.review_text_xpath = 'div[2]/div/text()'
+        # There are two different site structures containing the number of reviews for some reason.
         self.review_number_xpath_old = '//span[@class="reviewcount"]/text()'
         self.review_number_xpath_new = '//span[@itemprop="reviewCount"]/text()'
         self.reviews = []
@@ -58,8 +62,11 @@ class ProductSpider(scrapy.Spider):
         item = MindfactoryItem()
         item["name"] = response.xpath(self.product_name_xpath).extract()[0]
         item["brand"] = response.xpath(self.product_brand_xpath).extract()[0]
-        item["ean"] = response.xpath(self.product_ean_xpath).extract()[0]
-        item["sku"] = response.xpath(self.product_sku_xpath).extract()[0]
+        ean = response.xpath(self.product_ean_xpath).extract()
+        item["ean"] = ean[0] if len(ean) > 0 else "N/A"
+        sku = response.xpath(self.product_sku_xpath).extract()
+        item["sku"] = sku[0] if len(sku) > 0 else "N/A"
+        # There are prices and special prices for some reason.
         sprice = response.xpath(self.product_sprice_xpath).extract()
         price = response.xpath(self.product_price_xpath).extract()
         if len(price) > 0 and len(price[0].strip()) > 0:
@@ -76,6 +83,18 @@ class ProductSpider(scrapy.Spider):
         item["reviews"] = []
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
+        next_page = response.xpath(self.next_page_xpath)
+        if len(next_page) > 0:
+            yield scrapy.Request(next_page[0].extract(), callback=self.review_helper, meta={"item": item})
+        yield item
+
+    def review_helper(self, response):
+        item = response.meta["item"]
+        next_page_temp = response.xpath(self.next_page_xpath)
+        for review in response.xpath(self.review_xpath):
+            item["reviews"].append(self.parse_review(review))
+        if len(next_page_temp) > 0:
+            yield scrapy.Request(next_page_temp[0].extract(), callback=self.review_helper, meta={"item": item})
         yield item
 
     def parse_review(self, review):
