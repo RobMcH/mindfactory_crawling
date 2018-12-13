@@ -102,7 +102,7 @@ class ProductSpider(scrapy.Spider):
         rev["stars"] = stars
         rev["author"] = review.xpath(self.review_author_xpath).extract()[0]
         rev["date"] = review.xpath(self.review_date_xpath).extract()[0][3:]
-        rev["verified"] = True if len(review.xpath(self.review_verified_xpath)) > 0 else False
+        rev["verified"] = "True" if len(review.xpath(self.review_verified_xpath)) > 0 else "False"
         text = review.xpath(self.review_text_xpath).extract()
         if len(text) > 0:
             rev["text"] = " ".join([x.strip() for x in text])
