@@ -1,9 +1,5 @@
 import scrapy
-from scrapy.http import Request, Response
-from scrapy.utils.datatypes import SequenceExclude
 from mindfactory.items import MindfactoryItem, ReviewItem
-from twisted.internet import reactor, threads
-from w3lib.url import any_to_uri
 
 
 class ProductSpider(scrapy.Spider):
@@ -60,6 +56,7 @@ class ProductSpider(scrapy.Spider):
     def parse_product(self, response):
         # Extract information on product page and process reviews.
         item = MindfactoryItem()
+        item["url"] = response.url
         item["name"] = response.xpath(self.product_name_xpath).extract()[0]
         item["brand"] = response.xpath(self.product_brand_xpath).extract()[0]
         ean = response.xpath(self.product_ean_xpath).extract()

@@ -65,7 +65,8 @@ CONCURRENT_REQUESTS = 32
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'mindfactory.pipelines.duplicates_pipeline.DuplicatesPipeline': 1
+    'mindfactory.pipelines.duplicates_pipeline.DuplicatesPipeline': 1,
+    'mindfactory.pipelines.database_pipeline.DatabasePipeline': 2
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
