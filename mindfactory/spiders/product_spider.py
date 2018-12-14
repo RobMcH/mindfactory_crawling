@@ -67,16 +67,16 @@ class ProductSpider(scrapy.Spider):
         sprice = response.xpath(self.product_sprice_xpath).extract()
         price = response.xpath(self.product_price_xpath).extract()
         if len(price) > 0 and len(price[0].strip()) > 0:
-            item["price"] = price[0].rstrip()[1:-1]
+            item["price"] = float(price[0].rstrip()[1:-1].replace("-", "0").replace(".", "").replace(",", "."))
         elif len(sprice) > 0:
-            item["price"] = sprice[0].rstrip()[1:-1]
+            item["price"] = float(sprice[0].rstrip()[1:-1].replace("-", "0").replace(".", "").replace(",", "."))
         else:
             item["price"] = "N/A"
         count_and_people = response.xpath(self.product_count_xpath).extract()
-        item["count_sold"] = count_and_people[0]
-        item["people_watching"] = count_and_people[1]
+        item["count_sold"] = int(count_and_people[0].replace(".", ""))
+        item["people_watching"] = int(count_and_people[1].replace(".", ""))
         rma = response.xpath(self.product_rma_xpath).extract()
-        item["rma_quote"] = rma[0].strip()[:-1] if len(rma) > 0 else "N/A"
+        item["rma_quote"] = int(rma[0].strip()[:-1]) if len(rma) > 0 else "N/A"
         item["reviews"] = []
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
