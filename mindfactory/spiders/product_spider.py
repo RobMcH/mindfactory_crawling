@@ -9,7 +9,7 @@ class ProductSpider(scrapy.Spider):
                   'https://www.mindfactory.de/Entertainment.html', 'https://www.mindfactory.de/Heim+~+Garten.html']
     allowed_domains = ["www.mindfactory.de"]
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """
         Set xpath for extracting all subcategory and product links, titles, prices, reviews etc.
         """
@@ -36,6 +36,7 @@ class ProductSpider(scrapy.Spider):
         self.review_number_xpath_old = '//span[@class="reviewcount"]/text()'
         self.review_number_xpath_new = '//span[@itemprop="reviewCount"]/text()'
         self.reviews = []
+        super(ProductSpider, self).__init__(*args, **kwargs)
 
     def parse(self, response):
         # Extract URLs to all subcategories.
@@ -96,9 +97,7 @@ class ProductSpider(scrapy.Spider):
 
     def parse_review(self, review):
         rev = ReviewItem()
-        stars = 0
-        for star in review.xpath(self.review_stars_xpath):
-            stars += 1
+        stars = len(review.xpath(self.review_stars_xpath))
         rev["stars"] = stars
         rev["author"] = review.xpath(self.review_author_xpath).extract()[0]
         rev["date"] = review.xpath(self.review_date_xpath).extract()[0][3:]
