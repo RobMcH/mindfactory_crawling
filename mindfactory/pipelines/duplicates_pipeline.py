@@ -7,12 +7,12 @@ class DuplicatesPipeline(object):
     """
 
     def __init__(self):
-        self.seen_eans = set()
+        self.seen_urls = set()
 
     def process_item(self, item, spider):
-        ean = item["ean"]
-        if ean in self.seen_eans:
-            raise DropItem(f"Duplicate item found with EAN {ean}")
+        url = item["url"]
+        if url in self.seen_urls:
+            raise DropItem(f"Duplicate item found with URL {url}")
         else:
-            self.seen_eans.add(ean)
+            self.seen_urls.add(url)
             return item
