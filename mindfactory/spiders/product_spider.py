@@ -60,7 +60,7 @@ class ProductSpider(scrapy.Spider):
         item = MindfactoryItem()
         item["url"] = response.url
         item["name"] = response.xpath(self.product_name_xpath).extract_first()
-        item["brand"] = response.xpath(self.product_brand_xpath).extract_first()[0]
+        item["brand"] = response.xpath(self.product_brand_xpath).extract_first()
         item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=-1)
         item["sku"] = response.xpath(self.product_sku_xpath).extract_first(default=-1)
         # There are prices and special prices for some reason.
