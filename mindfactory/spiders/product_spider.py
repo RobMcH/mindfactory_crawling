@@ -87,18 +87,18 @@ class ProductSpider(scrapy.Spider):
         item["reviews"] = []
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
-        next_page = response.xpath(self.next_page_xpath)
-        if len(next_page) > 0:
+        next_page = response.xpath(self.next_page_xpath).extract_first(default=None)
+        if next_page is not None:
             yield scrapy.Request(next_page[0].extract(), callback=self.review_helper, meta={"item": item})
         yield item
 
     def review_helper(self, response):
         item = response.meta["item"]
-        next_page_temp = response.xpath(self.next_page_xpath)
+        next_page_temp = response.xpath(self.next_page_xpath).extract_first(default=None)
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
-        if len(next_page_temp) > 0:
-            yield scrapy.Request(next_page_temp[0].extract(), callback=self.review_helper, meta={"item": item})
+        if next_page_temp is not None:
+            yield scrapy.Request(next_page_temp.extract(), callback=self.review_helper, meta={"item": item})
         yield item
 
     def parse_review(self, review):
