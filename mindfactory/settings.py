@@ -16,7 +16,7 @@ NEWSPIDER_MODULE = 'mindfactory.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'mindfactory_bot (+http://ims.uni-stuttgart.de)'
+USER_AGENT = 'mindfactory_bot'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
