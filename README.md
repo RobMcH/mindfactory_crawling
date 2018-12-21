@@ -13,7 +13,7 @@ Each product has the following properties:
 * RMA quote (in percent)
 * Price  
 
-Additionally, for every product all reviews are collected and stored in a separate SQLite table. A entry in this table has the following properties:
+Additionally, for every product all reviews are collected and stored in a separate SQLite table. An entry in this table has the following properties:
 * Product ID (Reference to the corresponding ID in the product table)
 * Stars (Rating, from 0 to 5)
 * Text
