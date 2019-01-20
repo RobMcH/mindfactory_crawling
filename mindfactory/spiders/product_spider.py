@@ -47,9 +47,9 @@ class ProductSpider(scrapy.Spider):
 
     def parse_category(self, response):
         # Extract URL to the next page.
-        next_page = response.xpath(self.next_page_xpath).extract()
-        if len(next_page) > 0:
-            yield scrapy.Request(next_page[0], callback=self.parse_category)
+        next_page = response.xpath(self.next_page_xpath).extract_first()
+        if next_page:
+            yield scrapy.Request(next_page, callback=self.parse_category)
         # Extract URLs to all products on each page.
         for href in response.xpath(self.product_xpath):
             url = href.extract()
@@ -67,10 +67,14 @@ class ProductSpider(scrapy.Spider):
         sprice = response.xpath(self.product_sprice_xpath).extract_first(default=None)
         price = response.xpath(self.product_price_xpath).extract_first(default=None)
         if price is not None:
-            item["price"] = float(price.rstrip()[1:-1].replace("-", "0").replace(".", "").replace(",", "."))
-        elif sprice is not None:
-            item["price"] = float(sprice[0].rstrip()[1:-1].replace("-", "0").replace(".", "").replace(",", "."))
-        else:
+            text = price.rstrip()[1:-1]
+            if text:
+                item["price"] = float(text.replace("-", "0").replace(".", "").replace(",", "."))
+        if sprice is not None:
+            text = sprice.rstrip()[1:-1]
+            if text:
+                item["price"] = float(text.replace("-", "0").replace(".", "").replace(",", "."))
+        if "price" not in item:
             item["price"] = -1
         count_and_people = response.xpath(self.product_count_xpath).extract()
         sold_or_people = response.xpath(self.product_sold_or_people).extract_first(default=None)
@@ -89,29 +93,27 @@ class ProductSpider(scrapy.Spider):
             item["reviews"].append(self.parse_review(review))
         next_page = response.xpath(self.next_page_xpath).extract_first(default=None)
         if next_page is not None:
-            yield scrapy.Request(next_page[0].extract(), callback=self.review_helper, meta={"item": item})
+            yield scrapy.Request(next_page, callback=self.review_helper, meta={"item": item})
         yield item
 
     def review_helper(self, response):
+        # Recursively extract all reviews for a single product.
         item = response.meta["item"]
         next_page_temp = response.xpath(self.next_page_xpath).extract_first(default=None)
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
         if next_page_temp is not None:
-            yield scrapy.Request(next_page_temp.extract(), callback=self.review_helper, meta={"item": item})
+            yield scrapy.Request(next_page_temp, callback=self.review_helper, meta={"item": item})
         yield item
 
     def parse_review(self, review):
+        # Extract all present data of a single review.
         rev = ReviewItem()
-        stars = len(review.xpath(self.review_stars_xpath))
-        rev["stars"] = stars
+        rev["stars"] = len(review.xpath(self.review_stars_xpath))
         rev["author"] = review.xpath(self.review_author_xpath).extract_first()
         rev["date"] = review.xpath(self.review_date_xpath).extract_first()[3:]
         rev["verified"] = "True" if review.xpath(self.review_verified_xpath).extract_first(
             default=None) is not None else "False"
         text = review.xpath(self.review_text_xpath).extract()
-        if len(text) > 0:
-            rev["text"] = " ".join([x.strip() for x in text])
-        else:
-            rev["text"] = ""
+        rev["text"] = " ".join([x.strip() for x in text])
         return rev
