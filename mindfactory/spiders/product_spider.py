@@ -15,6 +15,7 @@ class ProductSpider(scrapy.Spider):
         """
         self.category_xpath = '//li[@class="background_maincat1"]/a/@href'
         self.product_xpath = '//a[@class="p-complete-link visible-xs visible-sm"]/@href'
+        self.product_category = '//*[@id="bBreadcrumb"]/ol/li[3]/a/span/text()'
         self.next_page_xpath = '//a[@aria-label="Nächste Seite"]/@href'
         self.product_name_xpath = '//h1[@itemprop="name"]/text()'
         self.product_brand_xpath = '//span[@itemprop="brand"]/text()'
@@ -23,8 +24,8 @@ class ProductSpider(scrapy.Spider):
         self.product_sprice_xpath = '//span[@class="specialPriceText"]/text()'
         self.product_price_xpath = '//div[@id="priceCol"]/div[@class="pprice"]/text()[3]'
         # First element is the amount of sold products; second element is the amount of people watching this product
-        self.product_sold_or_people = '//*[@id="cart_quantity"]/div/div[2]/div[3]/div/div/text()[2]'
-        self.product_count_xpath = '//*[@id="cart_quantity"]/div/div[2]/div[3]/div/div/span/text()'
+        self.product_sold_or_people = '//*[@id="cart_quantity"]//div[@class="psold"]/text()[2]'
+        self.product_count_xpath = '//*[@id="cart_quantity"]//div[@class="psold"]/span[@class="pcountsold"]/text()'
         self.product_rma_xpath = '//p[@class="mat5"]/text()'  # in percent
         self.review_xpath = '//div[@itemprop="review"]'
         # All of the review xpath are relative to the original review xpath.
@@ -36,6 +37,7 @@ class ProductSpider(scrapy.Spider):
         # There are two different site structures containing the number of reviews for some reason.
         self.review_number_xpath_old = '//span[@class="reviewcount"]/text()'
         self.review_number_xpath_new = '//span[@itemprop="reviewCount"]/text()'
+        self.num_page_xpath = '//*[@id="moreReviews"]/div[4]/div[5]/div/div[3]/nav/ul/li[1]/a/text()'
         self.reviews = []
         super(ProductSpider, self).__init__(*args, **kwargs)
 
@@ -59,6 +61,7 @@ class ProductSpider(scrapy.Spider):
         # Extract information on product page and process reviews.
         item = MindfactoryItem()
         item["url"] = response.url
+        item["category"] = response.xpath(self.product_category).extract_first()
         item["name"] = response.xpath(self.product_name_xpath).extract_first()
         item["brand"] = response.xpath(self.product_brand_xpath).extract_first()
         item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=-1)
@@ -93,18 +96,20 @@ class ProductSpider(scrapy.Spider):
             item["reviews"].append(self.parse_review(review))
         next_page = response.xpath(self.next_page_xpath).extract_first(default=None)
         if next_page is not None:
-            yield scrapy.Request(next_page, callback=self.review_helper, meta={"item": item})
-        yield item
+            yield scrapy.Request(next_page, callback=self.review_helper, meta={"item": item}, dont_filter=True)
+        else:
+            yield item
 
     def review_helper(self, response):
         # Recursively extract all reviews for a single product.
         item = response.meta["item"]
-        next_page_temp = response.xpath(self.next_page_xpath).extract_first(default=None)
+        next_page = response.xpath(self.next_page_xpath).extract_first(default=None)
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
-        if next_page_temp is not None:
-            yield scrapy.Request(next_page_temp, callback=self.review_helper, meta={"item": item})
-        yield item
+        if next_page is not None:
+            yield scrapy.Request(next_page, callback=self.review_helper, meta={"item": item}, dont_filter=True)
+        else:
+            yield item
 
     def parse_review(self, review):
         # Extract all present data of a single review.
