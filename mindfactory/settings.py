@@ -14,6 +14,8 @@ BOT_NAME = 'mindfactory_bot'
 SPIDER_MODULES = ['mindfactory.spiders']
 NEWSPIDER_MODULE = 'mindfactory.spiders'
 
+# Log only information output
+LOG_LEVEL = "INFO"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'mindfactory_bot'

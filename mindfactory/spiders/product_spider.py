@@ -64,8 +64,8 @@ class ProductSpider(scrapy.Spider):
         item["category"] = response.xpath(self.product_category).extract_first()
         item["name"] = response.xpath(self.product_name_xpath).extract_first()
         item["brand"] = response.xpath(self.product_brand_xpath).extract_first()
-        item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=-1)
-        item["sku"] = response.xpath(self.product_sku_xpath).extract_first(default=-1)
+        item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=None)
+        item["sku"] = response.xpath(self.product_sku_xpath).extract_first(default=None)
         # There are prices and special prices for some reason.
         sprice = response.xpath(self.product_sprice_xpath).extract_first(default=None)
         price = response.xpath(self.product_price_xpath).extract_first(default=None)
@@ -78,19 +78,19 @@ class ProductSpider(scrapy.Spider):
             if text:
                 item["price"] = float(text.replace("-", "0").replace(".", "").replace(",", "."))
         if "price" not in item:
-            item["price"] = -1
+            item["price"] = None
         count_and_people = response.xpath(self.product_count_xpath).extract()
         sold_or_people = response.xpath(self.product_sold_or_people).extract_first(default=None)
         if len(count_and_people) == 2:
             item["count_sold"] = int(count_and_people[0].replace(".", ""))
             item["people_watching"] = int(count_and_people[1].replace(".", ""))
         elif len(count_and_people) == 1:
-            item["count_sold"] = int(count_and_people[0].replace(".", "")) if sold_or_people is not None else -1
-            item["people_watching"] = -1 if sold_or_people is not None else int(count_and_people[0].replace(".", ""))
+            item["count_sold"] = int(count_and_people[0].replace(".", "")) if sold_or_people is not None else None
+            item["people_watching"] = None if sold_or_people is not None else int(count_and_people[0].replace(".", ""))
         else:
-            item["count_sold"] = item["people_watching"] = -1
+            item["count_sold"] = item["people_watching"] = None
         rma = response.xpath(self.product_rma_xpath).extract_first(default=None)
-        item["rma_quote"] = int(rma.strip()[:-1]) if rma is not None else -1
+        item["rma_quote"] = int(rma.strip()[:-1]) if rma is not None else None
         item["reviews"] = []
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
@@ -116,9 +116,10 @@ class ProductSpider(scrapy.Spider):
         rev = ReviewItem()
         rev["stars"] = len(review.xpath(self.review_stars_xpath))
         rev["author"] = review.xpath(self.review_author_xpath).extract_first()
-        rev["date"] = review.xpath(self.review_date_xpath).extract_first()[3:]
-        rev["verified"] = "True" if review.xpath(self.review_verified_xpath).extract_first(
-            default=None) is not None else "False"
+        date_list = review.xpath(self.review_date_xpath).extract_first()[3:].split(".")
+        rev["date"] = f"{date_list[2]}-{date_list[1]}-{date_list[0]}"
+        rev["verified"] = 1 if review.xpath(self.review_verified_xpath).extract_first(
+            default=None) is not None else 0
         text = review.xpath(self.review_text_xpath).extract()
         rev["text"] = " ".join([x.strip() for x in text])
         return rev
