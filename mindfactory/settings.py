@@ -68,7 +68,8 @@ EXTENSIONS = {
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     'mindfactory.pipelines.duplicates_pipeline.DuplicatesPipeline': 1,
-    'mindfactory.pipelines.database_pipeline.DatabasePipeline': 2
+    'mindfactory.pipelines.rating_pipeline.RatingPipeline': 2,
+    'mindfactory.pipelines.database_pipeline.DatabasePipeline': 3
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

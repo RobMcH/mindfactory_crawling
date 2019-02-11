@@ -1,4 +1,5 @@
 import scrapy
+import re
 from mindfactory.items import MindfactoryItem, ReviewItem
 
 
@@ -26,10 +27,13 @@ class ProductSpider(scrapy.Spider):
         # First element is the amount of sold products; second element is the amount of people watching this product
         self.product_sold_or_people = '//*[@id="cart_quantity"]//div[@class="psold"]/text()[2]'
         self.product_count_xpath = '//*[@id="cart_quantity"]//div[@class="psold"]/span[@class="pcountsold"]/text()'
+        self.shipping_xpath = '//a[@class="shipping1" or @class="shipping2" or @class="shipping3" or' \
+                              ' @class="shipping4" or @class="shipping5"]/text()'
         self.product_rma_xpath = '//p[@class="mat5"]/text()'  # in percent
         self.review_xpath = '//div[@itemprop="review"]'
         # All of the review xpath are relative to the original review xpath.
-        self.review_stars_xpath = 'div[1]/div/div[@class="pstars pull-left"]/span[@class="glyphicon glyphicon-star filled-star"]'
+        self.review_stars_xpath = 'div[1]/div/div[@class="pstars pull-left"]/' \
+                                  'span[@class="glyphicon glyphicon-star filled-star"]'
         self.review_author_xpath = 'div[1]/div/div[2]/strong/text()'
         self.review_date_xpath = 'div[1]/div/div[2]/span/text()'
         self.review_verified_xpath = 'div[1]/div/div[3]/strong/span'
@@ -57,7 +61,11 @@ class ProductSpider(scrapy.Spider):
         item = MindfactoryItem()
         item["url"] = response.url
         item["category"] = response.xpath(self.product_category).extract_first(default=None)
-        item["name"] = response.xpath(self.product_name_xpath).extract_first(default=None)
+        name = response.xpath(self.product_name_xpath).extract_first(default=None)
+        price_in_name = re.match("\(€.*\)", name)  # Check for malformed product names and clean them.
+        if price_in_name is not None:
+            name = name[price_in_name.end():]
+        item["name"] = name
         item["brand"] = response.xpath(self.product_brand_xpath).extract_first(default=None)
         item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=None)
         item["sku"] = response.xpath(self.product_sku_xpath).extract_first(default=None)
@@ -81,7 +89,9 @@ class ProductSpider(scrapy.Spider):
             item["count_sold"] = item["people_watching"] = None
         rma = response.xpath(self.product_rma_xpath).extract_first(default=None)
         item["rma_quote"] = int(rma.strip()[:-1]) if rma is not None else None
-        item["reviews"] = []
+        shipping = response.xpath(self.shipping_xpath).extract_first(default=None)
+        item["shipping"] = shipping.split("|")[0].strip() if shipping is not None else None
+        item["reviews"], item["avg_rating"] = [], 0.0
         for review in response.xpath(self.review_xpath):
             item["reviews"].append(self.parse_review(review))
         next_page = response.xpath(self.next_page_xpath).extract_first(default=None)
