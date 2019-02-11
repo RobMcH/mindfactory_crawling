@@ -56,12 +56,11 @@ class ProductSpider(scrapy.Spider):
         # Extract information on product page and process reviews.
         item = MindfactoryItem()
         item["url"] = response.url
-        item["category"] = response.xpath(self.product_category).extract_first()
-        item["name"] = response.xpath(self.product_name_xpath).extract_first()
-        item["brand"] = response.xpath(self.product_brand_xpath).extract_first()
+        item["category"] = response.xpath(self.product_category).extract_first(default=None)
+        item["name"] = response.xpath(self.product_name_xpath).extract_first(default=None)
+        item["brand"] = response.xpath(self.product_brand_xpath).extract_first(default=None)
         item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=None)
         item["sku"] = response.xpath(self.product_sku_xpath).extract_first(default=None)
-        # There are prices and special prices for some reason.
         price = response.xpath(self.product_price_xpath).extract_first(default=None)
         if price is not None:
             text = price.rstrip()[1:-1]
@@ -71,6 +70,7 @@ class ProductSpider(scrapy.Spider):
             item["price"] = None
         count_and_people = response.xpath(self.product_count_xpath).extract()
         sold_or_people = response.xpath(self.product_sold_or_people).extract_first(default=None)
+        # Assign the amount of sold products and watching people depending on the present information.
         if len(count_and_people) == 2:
             item["count_sold"] = int(count_and_people[0].replace(".", ""))
             item["people_watching"] = int(count_and_people[1].replace(".", ""))

@@ -5,7 +5,8 @@ class DatabasePipeline(object):
     def __init__(self):
         self.connection = sqlite3.connect('./scrapedata.db')
         self.cursor = self.connection.cursor()
-        # If this returns None, the table does not exist. In this case INSERT instead of UPDATE is used.
+        # If this returns None, the table does not exist. In this case INSERT instead of UPDATE is used when processing
+        # items.
         self.mode = self.cursor.execute("""
                                         SELECT name FROM sqlite_master
                                         WHERE type='table' AND name='productdata'
