@@ -21,8 +21,8 @@ class ProductSpider(scrapy.Spider):
         self.product_brand_xpath = '//span[@itemprop="brand"]/text()'
         self.product_ean_xpath = '//span[@class="product-ean"]/text()'
         self.product_sku_xpath = '//span[@class="sku-model"]/text()'
-        self.product_sprice_xpath = '//span[@class="specialPriceText"]/text()'
-        self.product_price_xpath = '//div[@id="priceCol"]/div[@class="pprice"]/text()[3]'
+        self.product_price_xpath = '//span[@class="specialPriceText"]/text() |' \
+                                   ' //div[@id="priceCol"]/div[@class="pprice"]/text()[3]'
         # First element is the amount of sold products; second element is the amount of people watching this product
         self.product_sold_or_people = '//*[@id="cart_quantity"]//div[@class="psold"]/text()[2]'
         self.product_count_xpath = '//*[@id="cart_quantity"]//div[@class="psold"]/span[@class="pcountsold"]/text()'
@@ -34,11 +34,6 @@ class ProductSpider(scrapy.Spider):
         self.review_date_xpath = 'div[1]/div/div[2]/span/text()'
         self.review_verified_xpath = 'div[1]/div/div[3]/strong/span'
         self.review_text_xpath = 'div[2]/div/text()'
-        # There are two different site structures containing the number of reviews for some reason.
-        self.review_number_xpath_old = '//span[@class="reviewcount"]/text()'
-        self.review_number_xpath_new = '//span[@itemprop="reviewCount"]/text()'
-        self.num_page_xpath = '//*[@id="moreReviews"]/div[4]/div[5]/div/div[3]/nav/ul/li[1]/a/text()'
-        self.reviews = []
         super(ProductSpider, self).__init__(*args, **kwargs)
 
     def parse(self, response):
@@ -67,17 +62,12 @@ class ProductSpider(scrapy.Spider):
         item["ean"] = response.xpath(self.product_ean_xpath).extract_first(default=None)
         item["sku"] = response.xpath(self.product_sku_xpath).extract_first(default=None)
         # There are prices and special prices for some reason.
-        sprice = response.xpath(self.product_sprice_xpath).extract_first(default=None)
         price = response.xpath(self.product_price_xpath).extract_first(default=None)
         if price is not None:
             text = price.rstrip()[1:-1]
             if text:
                 item["price"] = float(text.replace("-", "0").replace(".", "").replace(",", "."))
-        if sprice is not None:
-            text = sprice.rstrip()[1:-1]
-            if text:
-                item["price"] = float(text.replace("-", "0").replace(".", "").replace(",", "."))
-        if "price" not in item:
+        else:
             item["price"] = None
         count_and_people = response.xpath(self.product_count_xpath).extract()
         sold_or_people = response.xpath(self.product_sold_or_people).extract_first(default=None)
