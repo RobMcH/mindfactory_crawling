@@ -1,9 +1,12 @@
 import sqlite3
 import time
+import logging
 
 
 class DatabasePipeline(object):
     def __init__(self):
+        # The database file is uniquely identified by the creation time. Existing database files are *not* updated,
+        # this is on purpose, but can easily changed with the appropriate SQL.
         db_name = f"./mindfactory-{time.time()}.db"
         self.connection = sqlite3.connect(db_name)
         self.cursor = self.connection.cursor()
@@ -33,7 +36,7 @@ class DatabasePipeline(object):
                               date        TEXT,
                               verified    BIT
                             )""")
-        # Create search indices.
+        # Create search indices on the URLs and IDs (on both tables).
         self.cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS url_index ON productdata(url)")
         self.cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS id_index ON productdata(id)")
         self.cursor.execute("CREATE INDEX IF NOT EXISTS pid_index ON reviewdata(product_id)")
@@ -44,6 +47,7 @@ class DatabasePipeline(object):
         self.connection.close()
 
     def process_item(self, item, spider):
+        # Insert all product information into the database.
         self.cursor.execute("""
                               INSERT INTO productdata
                               (url, category, name, brand, ean, sku, count_sold, people_watching, shipping, rma_quote,
@@ -54,6 +58,7 @@ class DatabasePipeline(object):
                              item["count_sold"], item["people_watching"], item["shipping"], item["rma_quote"],
                              item["price"], item["avg_rating"]))
         row_id = self.cursor.lastrowid
+        # Insert all reviews of a product into the database.
         for rev in item["reviews"]:
             self.cursor.execute("""INSERT INTO reviewdata VALUES (?, ?, ?, ?, ?, ?)""",
                                 (row_id, rev["stars"], rev["text"], rev["author"], rev["date"], rev["verified"]))
@@ -62,4 +67,4 @@ class DatabasePipeline(object):
 
     def handle_error(self, e):
         # Next level error handling.
-        pass
+        logging.log(logging.ERROR, e)

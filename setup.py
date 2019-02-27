@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name='mindfactory_crawling',
-    version='1.0.4',
+    version='1.0.5',
     author="Robert McHardy",
     author_email="robert@robertmchardy.de",
     description="A crawler for mindfactory.de",

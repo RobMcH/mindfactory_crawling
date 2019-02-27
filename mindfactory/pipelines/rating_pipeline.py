@@ -4,8 +4,6 @@ class RatingPipeline(object):
     """
 
     def process_item(self, item, spider):
-        total_stars = 0
-        for review in item["reviews"]:
-            total_stars += review["stars"]
+        total_stars = sum(review["stars"] for review in item["reviews"])
         item["avg_rating"] = round(total_stars / len(item["reviews"]), 3) if item["reviews"] else None
         return item

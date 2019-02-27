@@ -3,7 +3,7 @@ from scrapy.exceptions import DropItem
 
 class DuplicatesPipeline(object):
     """
-    Removes already processed items from the pipeline.
+    Removes already processed items from the pipeline. If a duplicate item is found, a DropItem exception is raised.
     """
 
     def __init__(self):
