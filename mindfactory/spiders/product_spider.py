@@ -1,3 +1,4 @@
+import json
 import scrapy
 import re
 from mindfactory.items import MindfactoryItem, ReviewItem
@@ -5,6 +6,8 @@ from mindfactory.items import MindfactoryItem, ReviewItem
 
 class ProductSpider(scrapy.Spider):
     name = "mindfactory_products"
+    with open('tech_details.json', 'w') as ff:
+            tech_details_all=json.dump([],ff)
     # Start with main categories, there is no reason to start on the main page. Items on sale in Schnäppshop
     # and Mindstar are ignored since there is usually a very limited quantity of them available.
     start_urls = ['https://www.mindfactory.de/Hardware.html', 'https://www.mindfactory.de/Software.html',
@@ -101,7 +104,24 @@ class ProductSpider(scrapy.Spider):
             yield scrapy.Request(next_page, callback=self.review_helper, meta={"item": item}, dont_filter=True)
         else:
             yield item
-
+        ############### Export tech details to JSON 
+        with open('tech_details.json', 'r') as ff:
+            tech_details_all=json.load(ff)
+        headings=response.css('.table.table-striped.table-hover thead th::text').getall()
+        tables=response.css('.table.table-striped.table-hover tbody')
+        tech_details={'sku':response.xpath(self.product_sku_xpath).get(default=None)}
+        for each_table in tables:
+            i=tables.index(each_table)
+            tech_details[headings[i]]={}
+            rows=each_table.css('tr')
+            for each_row in rows:
+                cells=each_row.css('td::text').getall()
+                label=cells[0]
+                l_data=cells[1]
+                tech_details[headings[i]][label]=l_data
+        with open('tech_details.json', 'w') as ff:
+            tech_details_all.append(tech_details)
+            json.dump(tech_details_all,ff)
     def review_helper(self, response):
         # Recursively extract all reviews for a single product.
         item = response.meta["item"]
